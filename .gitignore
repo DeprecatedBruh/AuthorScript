@@ -6,14 +6,11 @@ __pycache__/
 .clang-format
 .directory
 
-# Location of Generated Parser
-Grammar/output/
-
 # Cloned Antlr Repo
 antlr4/
 
-# Generated Parser
-Compiler/Parser/
+# Generated
+Compiler/AuthorScriptParser/
 Compiler/Build/
 Compiler/Run/
 

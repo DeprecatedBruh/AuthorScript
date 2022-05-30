@@ -1,9 +1,9 @@
 #include "ASParserVisitorImpl.hpp"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Class: SSParserVisitorImpl //
+// Class: ASParserVisitorImpl //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Methods
-antlrcpp::Any ASParserVisitorImpl::visitText(ASParser::TextContext *ctx) {
+antlrcpp::Any ASParserVisitorImpl::visitVariable(ASParser::VariableContext *ctx) {
   return visitChildren(ctx);
 }

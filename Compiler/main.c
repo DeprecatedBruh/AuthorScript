@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ASMacros.h"
-
-int main() {
+int main(void) {
   return 0;
 }

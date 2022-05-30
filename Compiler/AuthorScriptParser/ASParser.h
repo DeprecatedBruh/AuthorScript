@@ -12,11 +12,13 @@
 class  ASParser : public antlr4::Parser {
 public:
   enum {
-    TEXT = 1
+    OP_EQUALS = 1, OP_PERIOD = 2, OP_DQOUTE = 3, OP_SQOUTE = 4, VALUE_INT = 5, 
+    VALUE_FLOAT = 6, VALUE_TRUE = 7, VALUE_FALSE = 8, VALUE_STRING = 9, 
+    ID = 10
   };
 
   enum {
-    RuleText = 0
+    RuleProgram = 0, RuleVariable = 1
   };
 
   explicit ASParser(antlr4::TokenStream *input);
@@ -29,21 +31,42 @@ public:
   virtual antlr4::dfa::Vocabulary& getVocabulary() const override;
 
 
-  class TextContext; 
+  class ProgramContext;
+  class VariableContext; 
 
-  class  TextContext : public antlr4::ParserRuleContext {
+  class  ProgramContext : public antlr4::ParserRuleContext {
   public:
-    TextContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    ProgramContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<antlr4::tree::TerminalNode *> TEXT();
-    antlr4::tree::TerminalNode* TEXT(size_t i);
+    std::vector<VariableContext *> variable();
+    VariableContext* variable(size_t i);
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
    
   };
 
-  TextContext* text();
+  ProgramContext* program();
+
+  class  VariableContext : public antlr4::ParserRuleContext {
+  public:
+    antlr4::Token *valueType = nullptr;
+    VariableContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *OP_EQUALS();
+    antlr4::tree::TerminalNode *VALUE_INT();
+    antlr4::tree::TerminalNode *VALUE_FLOAT();
+    antlr4::tree::TerminalNode *VALUE_STRING();
+    antlr4::tree::TerminalNode *VALUE_TRUE();
+    antlr4::tree::TerminalNode *VALUE_FALSE();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  VariableContext* variable();
 
 
 private:

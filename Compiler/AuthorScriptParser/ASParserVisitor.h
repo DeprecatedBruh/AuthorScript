@@ -19,7 +19,9 @@ public:
   /**
    * Visit parse trees produced by ASParser.
    */
-    virtual antlrcpp::Any visitText(ASParser::TextContext *context) = 0;
+    virtual antlrcpp::Any visitProgram(ASParser::ProgramContext *context) = 0;
+
+    virtual antlrcpp::Any visitVariable(ASParser::VariableContext *context) = 0;
 
 
 };

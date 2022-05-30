@@ -31,36 +31,36 @@ dfa::Vocabulary& ASParser::getVocabulary() const {
 }
 
 
-//----------------- TextContext ------------------------------------------------------------------
+//----------------- ProgramContext ------------------------------------------------------------------
 
-ASParser::TextContext::TextContext(ParserRuleContext *parent, size_t invokingState)
+ASParser::ProgramContext::ProgramContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<tree::TerminalNode *> ASParser::TextContext::TEXT() {
-  return getTokens(ASParser::TEXT);
+std::vector<ASParser::VariableContext *> ASParser::ProgramContext::variable() {
+  return getRuleContexts<ASParser::VariableContext>();
 }
 
-tree::TerminalNode* ASParser::TextContext::TEXT(size_t i) {
-  return getToken(ASParser::TEXT, i);
-}
-
-
-size_t ASParser::TextContext::getRuleIndex() const {
-  return ASParser::RuleText;
+ASParser::VariableContext* ASParser::ProgramContext::variable(size_t i) {
+  return getRuleContext<ASParser::VariableContext>(i);
 }
 
 
-antlrcpp::Any ASParser::TextContext::accept(tree::ParseTreeVisitor *visitor) {
+size_t ASParser::ProgramContext::getRuleIndex() const {
+  return ASParser::RuleProgram;
+}
+
+
+antlrcpp::Any ASParser::ProgramContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ASParserVisitor*>(visitor))
-    return parserVisitor->visitText(this);
+    return parserVisitor->visitProgram(this);
   else
     return visitor->visitChildren(this);
 }
 
-ASParser::TextContext* ASParser::text() {
-  TextContext *_localctx = _tracker.createInstance<TextContext>(_ctx, getState());
-  enterRule(_localctx, 0, ASParser::RuleText);
+ASParser::ProgramContext* ASParser::program() {
+  ProgramContext *_localctx = _tracker.createInstance<ProgramContext>(_ctx, getState());
+  enterRule(_localctx, 0, ASParser::RuleProgram);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -72,15 +72,106 @@ ASParser::TextContext* ASParser::text() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(5);
+    setState(7);
     _errHandler->sync(this);
     _la = _input->LA(1);
-    while (_la == ASParser::TEXT) {
-      setState(2);
-      match(ASParser::TEXT);
-      setState(7);
+    while (_la == ASParser::ID) {
+      setState(4);
+      variable();
+      setState(9);
       _errHandler->sync(this);
       _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- VariableContext ------------------------------------------------------------------
+
+ASParser::VariableContext::VariableContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* ASParser::VariableContext::ID() {
+  return getToken(ASParser::ID, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::OP_EQUALS() {
+  return getToken(ASParser::OP_EQUALS, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::VALUE_INT() {
+  return getToken(ASParser::VALUE_INT, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::VALUE_FLOAT() {
+  return getToken(ASParser::VALUE_FLOAT, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::VALUE_STRING() {
+  return getToken(ASParser::VALUE_STRING, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::VALUE_TRUE() {
+  return getToken(ASParser::VALUE_TRUE, 0);
+}
+
+tree::TerminalNode* ASParser::VariableContext::VALUE_FALSE() {
+  return getToken(ASParser::VALUE_FALSE, 0);
+}
+
+
+size_t ASParser::VariableContext::getRuleIndex() const {
+  return ASParser::RuleVariable;
+}
+
+
+antlrcpp::Any ASParser::VariableContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<ASParserVisitor*>(visitor))
+    return parserVisitor->visitVariable(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+ASParser::VariableContext* ASParser::variable() {
+  VariableContext *_localctx = _tracker.createInstance<VariableContext>(_ctx, getState());
+  enterRule(_localctx, 2, ASParser::RuleVariable);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(10);
+    match(ASParser::ID);
+    setState(11);
+    match(ASParser::OP_EQUALS);
+    setState(12);
+    antlrcpp::downCast<VariableContext *>(_localctx)->valueType = _input->LT(1);
+    _la = _input->LA(1);
+    if (!((((_la & ~ 0x3fULL) == 0) &&
+      ((1ULL << _la) & ((1ULL << ASParser::VALUE_INT)
+      | (1ULL << ASParser::VALUE_FLOAT)
+      | (1ULL << ASParser::VALUE_TRUE)
+      | (1ULL << ASParser::VALUE_FALSE)
+      | (1ULL << ASParser::VALUE_STRING))) != 0))) {
+      antlrcpp::downCast<VariableContext *>(_localctx)->valueType = _errHandler->recoverInline(this);
+    }
+    else {
+      _errHandler->reportMatch(this);
+      consume();
     }
    
   }
@@ -102,14 +193,16 @@ atn::ATN ASParser::_atn;
 std::vector<uint16_t> ASParser::_serializedATN;
 
 std::vector<std::string> ASParser::_ruleNames = {
-  "text"
+  "program", "variable"
 };
 
 std::vector<std::string> ASParser::_literalNames = {
+  "", "'='", "'.'", "'\"'", "'''", "", "", "'true'", "'false'"
 };
 
 std::vector<std::string> ASParser::_symbolicNames = {
-  "", "TEXT"
+  "", "OP_EQUALS", "OP_PERIOD", "OP_DQOUTE", "OP_SQOUTE", "VALUE_INT", "VALUE_FLOAT", 
+  "VALUE_TRUE", "VALUE_FALSE", "VALUE_STRING", "ID"
 };
 
 dfa::Vocabulary ASParser::_vocabulary(_literalNames, _symbolicNames);
@@ -132,13 +225,16 @@ ASParser::Initializer::Initializer() {
 
   static const uint16_t serializedATNSegment0[] = {
     0x3, 0x608b, 0xa72a, 0x8133, 0xb9ed, 0x417c, 0x3be7, 0x7786, 0x5964, 
-       0x3, 0x3, 0xb, 0x4, 0x2, 0x9, 0x2, 0x3, 0x2, 0x7, 0x2, 0x6, 0xa, 
-       0x2, 0xc, 0x2, 0xe, 0x2, 0x9, 0xb, 0x2, 0x3, 0x2, 0x2, 0x2, 0x3, 
-       0x2, 0x2, 0x2, 0x2, 0xa, 0x2, 0x7, 0x3, 0x2, 0x2, 0x2, 0x4, 0x6, 
-       0x7, 0x3, 0x2, 0x2, 0x5, 0x4, 0x3, 0x2, 0x2, 0x2, 0x6, 0x9, 0x3, 
-       0x2, 0x2, 0x2, 0x7, 0x5, 0x3, 0x2, 0x2, 0x2, 0x7, 0x8, 0x3, 0x2, 
-       0x2, 0x2, 0x8, 0x3, 0x3, 0x2, 0x2, 0x2, 0x9, 0x7, 0x3, 0x2, 0x2, 
-       0x2, 0x3, 0x7, 
+       0x3, 0xc, 0x11, 0x4, 0x2, 0x9, 0x2, 0x4, 0x3, 0x9, 0x3, 0x3, 0x2, 
+       0x7, 0x2, 0x8, 0xa, 0x2, 0xc, 0x2, 0xe, 0x2, 0xb, 0xb, 0x2, 0x3, 
+       0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x2, 0x2, 0x4, 0x2, 
+       0x4, 0x2, 0x3, 0x3, 0x2, 0x7, 0xb, 0x2, 0xf, 0x2, 0x9, 0x3, 0x2, 
+       0x2, 0x2, 0x4, 0xc, 0x3, 0x2, 0x2, 0x2, 0x6, 0x8, 0x5, 0x4, 0x3, 
+       0x2, 0x7, 0x6, 0x3, 0x2, 0x2, 0x2, 0x8, 0xb, 0x3, 0x2, 0x2, 0x2, 
+       0x9, 0x7, 0x3, 0x2, 0x2, 0x2, 0x9, 0xa, 0x3, 0x2, 0x2, 0x2, 0xa, 
+       0x3, 0x3, 0x2, 0x2, 0x2, 0xb, 0x9, 0x3, 0x2, 0x2, 0x2, 0xc, 0xd, 
+       0x7, 0xc, 0x2, 0x2, 0xd, 0xe, 0x7, 0x3, 0x2, 0x2, 0xe, 0xf, 0x9, 
+       0x2, 0x2, 0x2, 0xf, 0x5, 0x3, 0x2, 0x2, 0x2, 0x3, 0x9, 
   };
 
   _serializedATN.insert(_serializedATN.end(), serializedATNSegment0,

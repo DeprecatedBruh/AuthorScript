@@ -15,7 +15,11 @@
 class  ASParserBaseVisitor : public ASParserVisitor {
 public:
 
-  virtual antlrcpp::Any visitText(ASParser::TextContext *ctx) override {
+  virtual antlrcpp::Any visitProgram(ASParser::ProgramContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitVariable(ASParser::VariableContext *ctx) override {
     return visitChildren(ctx);
   }
 

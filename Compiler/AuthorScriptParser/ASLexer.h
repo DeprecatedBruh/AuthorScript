@@ -12,7 +12,9 @@
 class  ASLexer : public antlr4::Lexer {
 public:
   enum {
-    TEXT = 1
+    OP_EQUALS = 1, OP_PERIOD = 2, OP_DQOUTE = 3, OP_SQOUTE = 4, VALUE_INT = 5, 
+    VALUE_FLOAT = 6, VALUE_TRUE = 7, VALUE_FALSE = 8, VALUE_STRING = 9, 
+    ID = 10
   };
 
   explicit ASLexer(antlr4::CharStream *input);
