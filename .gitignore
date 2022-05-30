@@ -1,0 +1,21 @@
+# Random Garbage
+__pycache__/
+.antlr/
+.idea/
+.vscode
+.clang-format
+.directory
+
+# Location of Generated Parser
+Grammar/output/
+
+# Cloned Antlr Repo
+antlr4/
+
+# Generated Parser
+Compiler/Parser/
+Compiler/Build/
+Compiler/Run/
+
+# Documentation and/or notes
+Documentation/

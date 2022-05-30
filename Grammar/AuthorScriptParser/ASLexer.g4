@@ -1,0 +1,3 @@
+lexer grammar ASLexer;
+
+TEXT : .+? ;

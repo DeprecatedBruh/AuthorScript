@@ -1,0 +1,3 @@
+
+args=("$@") # CLI Arguments
+python3 build.py --compile_only "${args[@]}"
