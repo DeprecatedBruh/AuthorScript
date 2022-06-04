@@ -46,7 +46,7 @@ def modify_vscode_tasks(gcc_commands: [str]): # Needs to be refactored for C + C
                 file.write(line)
 
 
-def compile_cpp():
+def compile_cpp(command_args):
     # Find All Source Files
     source_files = glob('**/*.cpp', recursive=True)
     if len(source_files) <= 0:
@@ -55,6 +55,7 @@ def compile_cpp():
     gpp_command = ['g++', '-g', '-Wall', '-Wno-comment', '-Wno-switch', '-std=c++20',
                    '-IRun/include/', '-DANTLR4CPP_STATIC', '-fvisibility=hidden',
                    '-fdiagnostics-color=always', '-c']
+    gpp_command.extend(command_args)
     # Format Grammar Include Dirs
     include_dirs = []
     for grammar_dir in os.listdir(f'{root_cwd}/Grammar/'):
@@ -69,14 +70,15 @@ def compile_cpp():
     subprocess.run(gpp_command)
 
 
-def compile_c():
+def compile_c(command_args):
     # Find All Source Files
     source_files = glob('**/*.c', recursive=True)
     if len(source_files) <= 0:
         return
     # Generate Gcc Command
-    gcc_command = ['gcc', '-g', '-Wall', '-Wno-comment', '-Wno-switch',
+    gcc_command = ['gcc', '-g', '-Wall', '-std=c17', '-Wno-comment', '-Wno-switch',
                    '-fvisibility=hidden', '-fdiagnostics-color=always', '-c']
+    gcc_command.extend(command_args)
     # Extend Source Files to Command
     gcc_command.extend(source_files)
     # Run Command
@@ -89,7 +91,7 @@ def link_objects():
     if len(object_files) <= 0:
         return
     # Run Link Command
-    gcc_link_command = ['g++', '-g', '-Wall', '-o', 'Build/storys', '-fvisibility=hidden',
+    gcc_link_command = ['g++', '-g', '-Wall', '-std=c++20', '-o', 'Build/storys', '-fvisibility=hidden',
                         '-fdiagnostics-color=always']
     # Extend Object Files to Command
     gcc_link_command.extend(object_files)
@@ -98,7 +100,7 @@ def link_objects():
     subprocess.run(gcc_link_command)
 
 
-def compile_source():
+def compile_source(args):
     # Compile Runtime If Needed
     if not os.path.isdir(run_cwd):
         if not os.path.isdir('antlr4/'):  # Clone and Compile Repo (Cpp) (If Needed)
@@ -107,9 +109,17 @@ def compile_source():
         antlr.compile_cpp_runtime()
     # Compile ByteCodeTranslator
     os.chdir(compiler_cwd)
+    # Compile Args
+    command_args = []
+    if args['release_build']:
+        command_args.append('-DRELEASE')
+        command_args.append('-O2')
+    else:
+        command_args.append('-DDEBUG')
+        command_args.append('-Og')
     # Compile
-    compile_cpp()
-    compile_c()
+    compile_cpp(command_args)
+    compile_c(command_args)
     link_objects()
     for object_file_path in glob('*.o'):
         os.remove(object_file_path)
@@ -153,7 +163,7 @@ def clean():  # Stuff To Clean Up After Compilation
 
 def process_args():
     args = {
-        'rebuild': False, 'clean': False, 'compile_only': False
+        'rebuild': False, 'clean': False, 'compile_only': False, 'release_build': False
     }
     # Exit function early if there are no arguments
     if len(sys.argv) == 0:
@@ -166,6 +176,8 @@ def process_args():
             args['clean'] = True
         elif v == '--compile_only':
             args['compile_only'] = True
+        elif v == '-r' or v == '--release' or v == '--release-build':
+            args['release_build'] = True
     # Return Processed Args
     return args
 
@@ -179,7 +191,7 @@ def main():
     if not args['compile_only']:
         process_grammar()
     # Always Compile Source Files
-    compile_source()
+    compile_source(args)
     # Do Cleanup if necessary
     if args['clean']:
         clean()
