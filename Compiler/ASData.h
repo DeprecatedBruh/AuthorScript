@@ -13,26 +13,28 @@ typedef struct ASObj ASObj;
 typedef char aschar; // Makes it slightly easier to switch to wider chars if needed
 typedef enum ASType { AS_TYPE_NUMBER = 0, AS_TYPE_STRING, AS_TYPE_OBJECT, AS_TYPE_NIL } ASType;
 
+typedef union ASVarData {
+  ASObj *obj;
+  const aschar *str;
+  int64_t value;
+} ASVarData;
+
 typedef struct ASVar {
-  // Name of Variable
-  aschar *name;
-  // Value
-  union {
-    ASObj *obj;
-    aschar *str;
-    int64_t value;
-  } data;
-  // Variable Type
+  const aschar *name;
+  ASVarData data;
   ASType type;
 } ASVar;
 
 // Author Script Object
-// TODO: Create a way to safely delete all allocated data by passing obj pointer to a "destructor"
 // Constructor
 ASObj *asObjCreate(const size_t bucket_count);
+// Destructor - Recursively Frees All Objects (Including Passed In Object)
+void asObjDestroy(ASObj *obj);
 // Add Member
 ASVar *asObjAddVar(ASObj *obj, ASVar var);
 // Find Member
 ASVar *asObjFindVar(ASObj *obj, const aschar *name);
+// Add String - Adds String to Object's String Block So It Will Be Freed Upon Destruction
+const aschar *asObjAddString(ASObj *obj, const aschar *str);
 
 #endif

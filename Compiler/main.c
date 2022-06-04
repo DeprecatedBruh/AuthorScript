@@ -4,6 +4,6 @@
 
 int main(int argc, char *argv[]) {
   ASObj *obj = asObjCreate(12);
-  free(obj);
+  asObjDestroy(obj);
   return 0;
 }

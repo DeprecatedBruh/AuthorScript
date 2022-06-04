@@ -12,9 +12,9 @@ typedef struct StringBlock { //* All associated functions will need reworks if a
 } StringBlock;
 
 // Append String - Returns NULL if a String Couldn't be Appended
-#define CHECK_ERROR(condition, err_msg)                                                                                                    \
+#define CHECK_ERROR(condition, msg)                                                                                                        \
   if(condition) {                                                                                                                          \
-    fprintf(stderr, "StringBlock Append String Error: \"%s\n\"", err_msg);                                                                 \
+    fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                  \
     fflush(stderr);                                                                                                                        \
     return NULL;                                                                                                                           \
   }
@@ -60,7 +60,6 @@ const aschar *strBlockAppendString(StringBlock *const str_block, const aschar *c
   return ret_index;
 }
 
-#undef CHECK_ERROR
 #undef STR_SIZE_INIT
 #undef STR_SIZE_EXPANSION
 
@@ -73,12 +72,6 @@ typedef struct ASObjBucket {
 } ASObjBucket;
 
 // Add Member
-#define CHECK_ERROR(condition, msg)                                                                                                        \
-  if(condition) {                                                                                                                          \
-    fprintf(stderr, "ObjBucket Append Member Error: \"%s\"\n", msg);                                                                       \
-    fflush(stderr);                                                                                                                        \
-    return NULL;                                                                                                                           \
-  }
 #define SLOT_EXPANSION_AMOUNT 6
 
 ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
@@ -100,7 +93,6 @@ ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 }
 
 #undef SLOT_EXPANSION_AMOUNT
-#undef CHECK_ERROR
 
 // Author Script Object
 typedef struct ASObj {
@@ -132,6 +124,26 @@ ASObj *asObjCreate(const size_t bucket_count) {
   return obj;
 }
 
+// Destructor
+void asObjDestroy(ASObj *obj) {
+  // Error Checking
+  if(!obj) {
+    fprintf(stderr, "Object wasn't passed to \"%s\"\n", __func__);
+    return;
+  }
+  // Recursively Free Objects
+  for(size_t i = 0; i < obj->bucket_count; i++)
+    for(size_t j = 0; j < obj->buckets[i].consumed; j++) {
+      ASVar *var = &obj->buckets[i].members[j];
+      if(var->type == AS_TYPE_OBJECT)
+        asObjDestroy(var->data.obj);
+    }
+  // Free String Block
+  free(obj->str_block.start);
+  // Free Object
+  free(obj);
+}
+
 // Add Member
 ASVar *asObjAddVar(ASObj *obj, ASVar var) {
   // Error Checking
@@ -145,7 +157,6 @@ ASVar *asObjAddVar(ASObj *obj, ASVar var) {
   // Collision Checking
   for(size_t i = 0; i < bucket->consumed; ++i) {
     if(strcmp(bucket->members[i].name, var.name) == 0) {
-      //? Only print this error in DEBUG? (Probably not, important info)
       fprintf(stderr, "%s - Attempted to add duplicate variable: \"%s\"\n", __func__, var.name);
       return NULL;
     }
@@ -167,4 +178,14 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
       return &bucket->members[i];
   }
   return NULL;
+}
+
+// Add String
+const aschar *asObjAddString(ASObj *obj, const aschar *str) {
+  // Error Checking
+  CHECK_ERROR(!obj, "No object passed in!");
+  CHECK_ERROR(!str, "No string passed in!");
+  CHECK_ERROR(str[0] == 0, "Not a viable string to add!");
+  // Add String to String Block
+  return strBlockAppendString(&obj->str_block, str);
 }
