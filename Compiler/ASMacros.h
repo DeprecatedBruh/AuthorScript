@@ -2,9 +2,9 @@
 #define _SSMACROS_H_
 
 #ifdef __cplusplus
-  #define EXTERN_C(func_decl) extern "C" func_decl
+  #define EXTERN_C extern "C"
 #else
-  #define EXTERN_C(func_decl) func_decl
+  #define EXTERN_C
 #endif
 
 #endif

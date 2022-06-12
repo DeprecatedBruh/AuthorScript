@@ -5,7 +5,6 @@
 
 class ASParserVisitorImpl final : public ASParserBaseVisitor {
 public:
-  virtual antlrcpp::Any visitVariable(ASParser::VariableContext *ctx) override;
 };
 
 #endif

@@ -5,22 +5,32 @@ fragment LETTER : [a-z] | [A-Z] ;
 fragment SPCL_CHAR  : [_-] ;
 fragment ALPHA_NUM  : DIGIT | LETTER | SPCL_CHAR ;
 
+// Strings
+DQOUTE : '"' ;
+SQOUTE : '\'' ;
+
+// Objects
+LBRACE  : '{' ;
+RBRACE  : '}' ;
+
 // Operators
-OP_EQUALS : '=' ;
-OP_PERIOD : '.' ;
-OP_DQOUTE : '"' ;
-OP_SQOUTE : '\'' ;
+EQUALS : '=' ;
+PERIOD : '.' ;
 
 // Values
 VALUE_INT : '0'
           | [1-9] DIGIT*
           ;
-VALUE_FLOAT   : ('0' | [1-9] DIGIT*)? OP_PERIOD DIGIT* ;
+VALUE_FLOAT   : ('0' | [1-9] DIGIT*)? PERIOD DIGIT* ;
 VALUE_TRUE  : 'true' ;
 VALUE_FALSE : 'false' ;
-VALUE_STRING  : OP_SQOUTE .*? OP_SQOUTE
-              | OP_DQOUTE .*? OP_DQOUTE
+VALUE_STRING  : SQOUTE .*? SQOUTE
+              | DQOUTE .*? DQOUTE
               ;
 
 // Variables
 ID  : ('_' | LETTER) ALPHA_NUM* ;
+
+// WS
+NL  : '\n' ;
+WS  : [ \t] -> skip ;

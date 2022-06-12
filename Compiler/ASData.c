@@ -4,53 +4,59 @@
 #include <stdio.h>
 #include <string.h>
 
+//? Should this program not abort after failed memory allocation?
+
+#define ERROR_MSG(msg)                                                                                                                     \
+  fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                    \
+  fflush(stderr);
+
+#define CHECK_ERROR(condition, msg)                                                                                                        \
+  if(condition) {                                                                                                                          \
+    ERROR_MSG(msg);                                                                                                                        \
+    return;                                                                                                                                \
+  }
+
+#define CHECK_ERROR_RET(condition, msg, default_return)                                                                                    \
+  if(condition) {                                                                                                                          \
+    ERROR_MSG(msg);                                                                                                                        \
+    return default_return;                                                                                                                 \
+  }
+
 // String Block
-typedef struct StringBlock { //* All associated functions will need reworks if aschar changes size
+typedef struct StringBlock { //* All associated functions will need reworks if aschar changes underlying type
   aschar *start;
   aschar *index;
   size_t size;
 } StringBlock;
 
 // Append String - Returns NULL if a String Couldn't be Appended
-#define CHECK_ERROR(condition, msg)                                                                                                        \
-  if(condition) {                                                                                                                          \
-    fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                  \
-    fflush(stderr);                                                                                                                        \
-    return NULL;                                                                                                                           \
-  }
 #define STR_SIZE_INIT 64
 #define STR_SIZE_EXPANSION 64
 
 const aschar *strBlockAppendString(StringBlock *const str_block, const aschar *const str_to_app) {
 #ifdef DEBUG
   // Error Checking
-  CHECK_ERROR(!str_block, "No string block was passed in!");
-  CHECK_ERROR(!str_to_app, "No string was passed in!");
-  CHECK_ERROR(str_to_app[0] == 0, "Passed in string was not viable for appending!");
+  CHECK_ERROR_RET(!str_block, "No string block was passed in!", NULL);
+  CHECK_ERROR_RET(!str_to_app, "No string was passed in!", NULL);
+  CHECK_ERROR_RET(str_to_app[0] == 0, "Passed in string was not viable for appending!", NULL);
 #endif
-  // Allocate Memory
-  const size_t str_to_app_length = strlen(str_to_app);
-  size_t end_index = str_block->size - sizeof(aschar);
-  size_t index_offs = str_block->index - str_block->start;
-  size_t new_index_offs = index_offs + str_to_app_length + sizeof(aschar);
+  // Determine Indexes
+  const size_t str_to_app_length = strlen(str_to_app);                     // Length of string to append
+  size_t end_index = str_block->size - sizeof(aschar);                     // The last allocated character's index
+  size_t index_offs = str_block->index - str_block->start;                 // Index before appending
+  size_t new_index_offs = index_offs + str_to_app_length + sizeof(aschar); // Index after appending
   // Allocate More Memory
   if(new_index_offs > end_index) {
     // Allocate
-    const size_t new_size = new_index_offs + (STR_SIZE_EXPANSION - new_index_offs % STR_SIZE_EXPANSION);
-    aschar *new_start = realloc(str_block->start, new_size);
-    if(!new_start)
+    str_block->start = realloc(str_block->start, str_block->size += STR_SIZE_EXPANSION);
+    if(!str_block->start)
       abort();
-    // Assign Proper Data
-    str_block->start = new_start;
-    str_block->index = new_start + index_offs;
-    str_block->size = new_size;
-    end_index = new_size - sizeof(aschar);
-    // Zero Out Newly Allocated Area
-    memset(new_start + new_index_offs, 0, (new_start + end_index) - (new_start + new_index_offs));
+    // Reposition Index
+    str_block->index = str_block->start + index_offs;
   }
   // Initial Allocation
   else if(!str_block->start) {
-    str_block->start = str_block->index = calloc(STR_SIZE_INIT, sizeof(aschar));
+    str_block->start = str_block->index = malloc(STR_SIZE_INIT);
     str_block->size = STR_SIZE_INIT;
   }
   // Copy String
@@ -77,8 +83,8 @@ typedef struct ASObjBucket {
 ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 #ifdef DEBUG
   // Error Checking
-  CHECK_ERROR(!bucket, "No bucket passed in!");
-  CHECK_ERROR(!var, "No variable passed in!");
+  CHECK_ERROR_RET(!bucket, "No bucket passed in!", NULL);
+  CHECK_ERROR_RET(!var, "No variable passed in!", NULL);
 #endif
   // Expand Memory
   if(bucket->consumed == bucket->capacity) {
@@ -127,10 +133,7 @@ ASObj *asObjCreate(const size_t bucket_count) {
 // Destructor
 void asObjDestroy(ASObj *obj) {
   // Error Checking
-  if(!obj) {
-    fprintf(stderr, "Object wasn't passed to \"%s\"\n", __func__);
-    return;
-  }
+  CHECK_ERROR(!obj, "Object was not passed in!");
   // Recursively Free Objects
   for(size_t i = 0; i < obj->bucket_count; i++)
     for(size_t j = 0; j < obj->buckets[i].consumed; j++) {
@@ -147,10 +150,7 @@ void asObjDestroy(ASObj *obj) {
 // Add Member
 ASVar *asObjAddVar(ASObj *obj, ASVar var) {
   // Error Checking
-  if(!obj) {
-    fprintf(stderr, "Object wasn't passed to \"%s\"\n", __func__);
-    return NULL;
-  }
+  CHECK_ERROR_RET(!obj, "Object wasn't passed in!", NULL);
   // Hashing
   const size_t hash = hashCharStr(var.name, obj->bucket_count);
   ASObjBucket *bucket = &obj->buckets[hash];
@@ -183,9 +183,9 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
 // Add String
 const aschar *asObjAddString(ASObj *obj, const aschar *str) {
   // Error Checking
-  CHECK_ERROR(!obj, "No object passed in!");
-  CHECK_ERROR(!str, "No string passed in!");
-  CHECK_ERROR(str[0] == 0, "Not a viable string to add!");
+  CHECK_ERROR_RET(!obj, "No object passed in!", NULL);
+  CHECK_ERROR_RET(!str, "No string passed in!", NULL);
+  CHECK_ERROR_RET(str[0] == 0, "Not a viable string to add!", NULL);
   // Add String to String Block
   return strBlockAppendString(&obj->str_block, str);
 }
