@@ -10,13 +10,13 @@
   fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                \
   fflush(stderr);
 
-#define CHECK_ERROR(condition, msg)                                                                                                    \
+#define ASSERT(condition, msg)                                                                                                         \
   if(condition) {                                                                                                                      \
     ERROR_MSG(msg);                                                                                                                    \
     return;                                                                                                                            \
   }
 
-#define CHECK_ERROR_RET(condition, msg, default_return)                                                                                \
+#define ASSERT_RET(condition, msg, default_return)                                                                                     \
   if(condition) {                                                                                                                      \
     ERROR_MSG(msg);                                                                                                                    \
     return default_return;                                                                                                             \
@@ -36,9 +36,9 @@ typedef struct StringBlock { //* All associated functions will need reworks if a
 static aschar *strBlockAppendString(StringBlock *const str_block, const aschar *const str_to_app) {
 #ifdef DEBUG
   // Error Checking
-  CHECK_ERROR_RET(!str_block, "No string block was passed in!", NULL);
-  CHECK_ERROR_RET(!str_to_app, "No string was passed in!", NULL);
-  CHECK_ERROR_RET(str_to_app[0] == 0, "Passed in string was not viable for appending!", NULL);
+  ASSERT_RET(!str_block, "No string block was passed in!", NULL);
+  ASSERT_RET(!str_to_app, "No string was passed in!", NULL);
+  ASSERT_RET(str_to_app[0] == 0, "Passed in string was not viable for appending!", NULL);
 #endif
   // Determine Indexes
   const size_t str_to_app_length = strlen(str_to_app);                     // Length of string to append
@@ -83,8 +83,8 @@ typedef struct ASObjBucket {
 static ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 #ifdef DEBUG
   // Error Checking
-  CHECK_ERROR_RET(!bucket, "No bucket passed in!", NULL);
-  CHECK_ERROR_RET(!var, "No variable passed in!", NULL);
+  ASSERT_RET(!bucket, "No bucket passed in!", NULL);
+  ASSERT_RET(!var, "No variable passed in!", NULL);
 #endif
   // Expand Memory
   if(bucket->consumed >= bucket->capacity) {
@@ -133,7 +133,7 @@ ASObj *asObjCreate(const size_t bucket_count) {
 // Destructor
 void asObjDestroy(ASObj *obj) {
   // Error Checking
-  CHECK_ERROR(!obj, "Object was not passed in!");
+  ASSERT(!obj, "Object was not passed in!");
   // Recursively Free Objects
   for(size_t i = 0; i < obj->bucket_count; i++)
     for(size_t j = 0; j < obj->buckets[i].consumed; j++) {
@@ -150,7 +150,7 @@ void asObjDestroy(ASObj *obj) {
 // Add Member
 ASVar *asObjSetVar(ASObj *obj, ASVar var) {
   // Error Checking
-  CHECK_ERROR_RET(!obj, "Object wasn't passed in!", NULL);
+  ASSERT_RET(!obj, "Object wasn't passed in!", NULL);
   // Hashing
   const size_t hash = hashCharStr(var.name, obj->bucket_count);
   ASObjBucket *bucket = &obj->buckets[hash];
@@ -180,9 +180,9 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
 // Add String
 aschar *asObjAddString(ASObj *obj, const aschar *str) {
   // Error Checking
-  CHECK_ERROR_RET(!obj, "No object passed in!", NULL);
-  CHECK_ERROR_RET(!str, "No string passed in!", NULL);
-  CHECK_ERROR_RET(str[0] == 0, "Not a viable string to add!", NULL);
+  ASSERT_RET(!obj, "No object passed in!", NULL);
+  ASSERT_RET(!str, "No string passed in!", NULL);
+  ASSERT_RET(str[0] == 0, "Not a viable string to add!", NULL);
   // Add String to String Block
   return strBlockAppendString(&obj->str_block, str);
 }
