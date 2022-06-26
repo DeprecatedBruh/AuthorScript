@@ -15,44 +15,13 @@ compiler_cwd = f'{root_cwd}/Compiler'
 run_cwd = f'{compiler_cwd}/Run'
 
 
-def modify_vscode_tasks(gcc_commands: [str]): # Needs to be refactored for C + C++ code.
-    tasks_json_path = f'{root_cwd}/.vscode/tasks.json'
-    # Retrieve All Lines of tasks.json
-    with open(tasks_json_path, 'r') as file:
-        lines = file.readlines()
-    # Create G++ Arguments (gcc_commands should start at index 1)
-    try:
-        with open(tasks_json_path, 'w') as file:
-            line_strip = '\n\r\t '
-            in_args = False
-            wrote_args = False
-            for line in lines:
-                if not in_args:
-                    if not wrote_args and line.strip(line_strip) == '"args": [':
-                        in_args = True
-                    file.write(line)  # Write Line as-is
-                elif in_args and not wrote_args:
-                    wrote_args = True
-                    for gcc_command in gcc_commands[1:]:  # Start at Index 1 to Skip 'gcc' in Commands
-                        file.write(f'        "{gcc_command}",\n')  # Has Eight Spaces For Proper Indentation
-                else:
-                    if line.strip(line_strip) == '],':
-                        in_args = False
-                        file.write(line)  # Write Line as-is
-    except IOError as ex:
-        print(ex)
-        with open(tasks_json_path, 'w') as file:
-            for line in lines:
-                file.write(line)
-
-
 def compile_cpp(command_args):
     # Find All Source Files
     source_files = glob('**/*.cpp', recursive=True)
     if len(source_files) <= 0:
         return
     # Generate G++ Command
-    gpp_command = ['g++', '-g', '-Wall', '-Wno-comment', '-Wno-switch', '-std=c++20',
+    gpp_command = ['g++', '-Wall', '-Wno-comment', '-Wno-switch', '-std=c++20',
                    '-IRun/include/', '-DANTLR4CPP_STATIC', '-fvisibility=hidden',
                    '-fdiagnostics-color=always', '-c']
     gpp_command.extend(command_args)
@@ -76,7 +45,7 @@ def compile_c(command_args):
     if len(source_files) <= 0:
         return
     # Generate Gcc Command
-    gcc_command = ['gcc', '-g', '-Wall', '-std=c17', '-Wno-comment', '-Wno-switch',
+    gcc_command = ['gcc', '-Wall', '-std=c17', '-Wno-comment', '-Wno-switch',
                    '-fvisibility=hidden', '-fdiagnostics-color=always', '-c']
     gcc_command.extend(command_args)
     # Extend Source Files to Command
@@ -91,7 +60,7 @@ def link_objects():
     if len(object_files) <= 0:
         return
     # Run Link Command
-    gcc_link_command = ['g++', '-g', '-Wall', '-std=c++20', '-o', 'Build/storys', '-fvisibility=hidden',
+    gcc_link_command = ['g++', '-g', '-Wall', '-std=c++20', '-o', 'Build/asc', '-fvisibility=hidden',
                         '-fdiagnostics-color=always']
     # Extend Object Files to Command
     gcc_link_command.extend(object_files)
@@ -114,9 +83,11 @@ def compile_source(args):
     if args['release_build']:
         command_args.append('-DRELEASE')
         command_args.append('-O2')
+        command_args.append('-g')
     else:
         command_args.append('-DDEBUG')
-        command_args.append('-Og')
+        command_args.append('-O0')
+        command_args.append('-g')
     # Compile
     compile_cpp(command_args)
     compile_c(command_args)
@@ -168,7 +139,7 @@ def process_args():
     # Exit function early if there are no arguments
     if len(sys.argv) == 0:
         return args
-    # Loop through and process arguments
+    # Loop through and process arguments (TODO: Refactor to while loop)
     for i, v in enumerate(sys.argv):
         if v == '--rebuild':
             args['rebuild'] = True

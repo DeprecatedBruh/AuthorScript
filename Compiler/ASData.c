@@ -6,20 +6,20 @@
 
 //? Should this program not abort after failed memory allocation?
 
-#define ERROR_MSG(msg)                                                                                                                     \
-  fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                    \
+#define ERROR_MSG(msg)                                                                                                                 \
+  fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                \
   fflush(stderr);
 
-#define CHECK_ERROR(condition, msg)                                                                                                        \
-  if(condition) {                                                                                                                          \
-    ERROR_MSG(msg);                                                                                                                        \
-    return;                                                                                                                                \
+#define CHECK_ERROR(condition, msg)                                                                                                    \
+  if(condition) {                                                                                                                      \
+    ERROR_MSG(msg);                                                                                                                    \
+    return;                                                                                                                            \
   }
 
-#define CHECK_ERROR_RET(condition, msg, default_return)                                                                                    \
-  if(condition) {                                                                                                                          \
-    ERROR_MSG(msg);                                                                                                                        \
-    return default_return;                                                                                                                 \
+#define CHECK_ERROR_RET(condition, msg, default_return)                                                                                \
+  if(condition) {                                                                                                                      \
+    ERROR_MSG(msg);                                                                                                                    \
+    return default_return;                                                                                                             \
   }
 
 // String Block
@@ -33,7 +33,7 @@ typedef struct StringBlock { //* All associated functions will need reworks if a
 #define STR_SIZE_INIT 64
 #define STR_SIZE_EXPANSION 64
 
-const aschar *strBlockAppendString(StringBlock *const str_block, const aschar *const str_to_app) {
+static aschar *strBlockAppendString(StringBlock *const str_block, const aschar *const str_to_app) {
 #ifdef DEBUG
   // Error Checking
   CHECK_ERROR_RET(!str_block, "No string block was passed in!", NULL);
@@ -60,7 +60,7 @@ const aschar *strBlockAppendString(StringBlock *const str_block, const aschar *c
     str_block->size = STR_SIZE_INIT;
   }
   // Copy String
-  const aschar *ret_index = str_block->index;
+  aschar *ret_index = str_block->index;
   strcpy(str_block->index, str_to_app);
   str_block->index = str_block->start + new_index_offs;
   return ret_index;
@@ -80,14 +80,14 @@ typedef struct ASObjBucket {
 // Add Member
 #define SLOT_EXPANSION_AMOUNT 6
 
-ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
+static ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 #ifdef DEBUG
   // Error Checking
   CHECK_ERROR_RET(!bucket, "No bucket passed in!", NULL);
   CHECK_ERROR_RET(!var, "No variable passed in!", NULL);
 #endif
   // Expand Memory
-  if(bucket->consumed == bucket->capacity) {
+  if(bucket->consumed >= bucket->capacity) {
     fflush(stdout);
     bucket->members = realloc(bucket->members, sizeof(ASObjBucket) + (bucket->capacity += SLOT_EXPANSION_AMOUNT) * sizeof(ASVar));
     if(!bucket->members)
@@ -148,7 +148,7 @@ void asObjDestroy(ASObj *obj) {
 }
 
 // Add Member
-ASVar *asObjAddVar(ASObj *obj, ASVar var) {
+ASVar *asObjSetVar(ASObj *obj, ASVar var) {
   // Error Checking
   CHECK_ERROR_RET(!obj, "Object wasn't passed in!", NULL);
   // Hashing
@@ -156,16 +156,13 @@ ASVar *asObjAddVar(ASObj *obj, ASVar var) {
   ASObjBucket *bucket = &obj->buckets[hash];
   // Collision Checking
   for(size_t i = 0; i < bucket->consumed; ++i) {
-    if(strcmp(bucket->members[i].name, var.name) == 0) {
-      fprintf(stderr, "%s - Attempted to add duplicate variable: \"%s\"\n", __func__, var.name);
-      return NULL;
+    if(strcmp(bucket->members[i].name, var.name) == 0) { // If member is found, set it to argument var
+      ASVar *member = &bucket->members[i];
+      *member = var;
+      return member;
     }
   }
-  // Appending Name and Data to String Block
-  var.name = strBlockAppendString(&obj->str_block, var.name);
-  if(var.type == AS_TYPE_STRING)
-    var.data.str = strBlockAppendString(&obj->str_block, var.data.str);
-  // Append Var to Bucket
+  // Append Var to Bucket and return
   return asObjBucketAppendMember(bucket, &var);
 }
 
@@ -181,7 +178,7 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
 }
 
 // Add String
-const aschar *asObjAddString(ASObj *obj, const aschar *str) {
+aschar *asObjAddString(ASObj *obj, const aschar *str) {
   // Error Checking
   CHECK_ERROR_RET(!obj, "No object passed in!", NULL);
   CHECK_ERROR_RET(!str, "No string passed in!", NULL);

@@ -10,9 +10,10 @@ __pycache__/
 antlr4/
 
 # Generated
-Compiler/AuthorScriptParser/
 Compiler/Build/
-Compiler/Run/
 
 # Documentation and/or notes
 Documentation/
+
+# Test Document
+test.as
