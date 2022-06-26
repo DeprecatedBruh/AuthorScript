@@ -1,2 +1,2 @@
-Compiler/Run/ linguist-vendored
-Compiler/AuthorScriptParser/ linguist-vendored
+Compiler/Run/** linguist-vendored
+Compiler/AuthorScriptParser/** linguist-vendored
