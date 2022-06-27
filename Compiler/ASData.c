@@ -140,7 +140,7 @@ void asObjDestroy(ASObj *obj) {
       if(var->type == AS_TYPE_OBJECT)
         asObjDestroy(var->data.obj);
     }
-  // Free String Block
+  // Free DataBlock
   free(obj->data_block.start);
   // Free Object
   free(obj);
