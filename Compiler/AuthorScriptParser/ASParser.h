@@ -84,23 +84,6 @@ public:
    
   };
 
-  class  FunctionAssignContext : public VarContext {
-  public:
-    FunctionAssignContext(VarContext *ctx);
-
-    antlr4::tree::TerminalNode *ID();
-    antlr4::tree::TerminalNode *EQUALS();
-    antlr4::tree::TerminalNode *FUNCTION();
-    FunctionParamsContext *functionParams();
-    antlr4::tree::TerminalNode *DO();
-    std::vector<antlr4::tree::TerminalNode *> NL();
-    antlr4::tree::TerminalNode* NL(size_t i);
-    antlr4::tree::TerminalNode *END();
-    FunctionBodyContext *functionBody();
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
   class  ObjectAssignContext : public VarContext {
   public:
     ObjectAssignContext(VarContext *ctx);
@@ -156,6 +139,7 @@ public:
     antlr4::tree::TerminalNode* NL(size_t i);
     antlr4::tree::TerminalNode *END();
     FunctionBodyContext *functionBody();
+    antlr4::tree::TerminalNode *EQUALS();
 
 
     virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -170,8 +154,8 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *LPAREN();
     antlr4::tree::TerminalNode *RPAREN();
-    std::vector<VarContext *> var();
-    VarContext* var(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> ID();
+    antlr4::tree::TerminalNode* ID(size_t i);
     std::vector<antlr4::tree::TerminalNode *> COMMA();
     antlr4::tree::TerminalNode* COMMA(size_t i);
 

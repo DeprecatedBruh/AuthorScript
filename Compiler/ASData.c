@@ -1,5 +1,6 @@
 #include "ASData.h"
 
+// std
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,52 +23,50 @@
     return default_return;                                                                                                             \
   }
 
-// String Block
-typedef struct StringBlock { //* All associated functions will need reworks if aschar changes underlying type
+// Data Block
+typedef struct DataBlock {
   aschar *start;
   aschar *index;
   size_t size;
-} StringBlock;
+} DataBlock;
 
-// Append String - Returns NULL if a String Couldn't be Appended
-#define STR_SIZE_INIT 64
-#define STR_SIZE_EXPANSION 64
+#define DATA_SIZE_INIT 64
+#define DATA_SIZE_EXPANSION 64
 
-static aschar *strBlockAppendString(StringBlock *const str_block, const aschar *const str_to_app) {
+#define dataBlockAppendString(data_block, str, str_len) dataBlockAppendData(data_block, str, str_len + 1)
+static void *dataBlockAppendData(DataBlock *const data_block, const void *const data, const size_t data_size) {
 #ifdef DEBUG
   // Error Checking
-  ASSERT_RET(!str_block, "No string block was passed in!", NULL);
-  ASSERT_RET(!str_to_app, "No string was passed in!", NULL);
-  ASSERT_RET(str_to_app[0] == 0, "Passed in string was not viable for appending!", NULL);
+  ASSERT_RET(!data_block, "No string block was passed in!", NULL);
+  ASSERT_RET(!data, "No data was passed in!", NULL);
 #endif
   // Determine Indexes
-  const size_t str_to_app_length = strlen(str_to_app);                     // Length of string to append
-  size_t end_index = str_block->size - sizeof(aschar);                     // The last allocated character's index
-  size_t index_offs = str_block->index - str_block->start;                 // Index before appending
-  size_t new_index_offs = index_offs + str_to_app_length + sizeof(aschar); // Index after appending
-  // Allocate More Memory
+  size_t end_index = data_block->size - sizeof(aschar);
+  size_t index_offs = data_block->index - data_block->start;
+  size_t new_index_offs = index_offs + data_size;
+  // Allocate more memory
   if(new_index_offs > end_index) {
     // Allocate
-    str_block->start = realloc(str_block->start, str_block->size += STR_SIZE_EXPANSION);
-    if(!str_block->start)
+    data_block->start = realloc(data_block->start, data_block->size += DATA_SIZE_EXPANSION);
+    if(!data_block->start)
       abort();
     // Reposition Index
-    str_block->index = str_block->start + index_offs;
+    data_block->index = data_block->start + index_offs;
   }
   // Initial Allocation
-  else if(!str_block->start) {
-    str_block->start = str_block->index = malloc(STR_SIZE_INIT);
-    str_block->size = STR_SIZE_INIT;
+  else if(!data_block->start) {
+    data_block->start = data_block->index = malloc(DATA_SIZE_INIT);
+    data_block->size = DATA_SIZE_INIT;
   }
-  // Copy String
-  aschar *ret_index = str_block->index;
-  strcpy(str_block->index, str_to_app);
-  str_block->index = str_block->start + new_index_offs;
+  // Copy Data
+  void *ret_index = data_block->index;
+  memcpy(data_block->index, data, data_size);
+  data_block->index = data_block->start + new_index_offs;
   return ret_index;
 }
 
-#undef STR_SIZE_INIT
-#undef STR_SIZE_EXPANSION
+#undef DATA_SIZE_INIT
+#undef DATA_SIZE_EXPANSION
 
 // Author Script Object Bucket
 // Holds Array of Variables
@@ -102,7 +101,7 @@ static ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 
 // Author Script Object
 typedef struct ASObj {
-  StringBlock str_block;
+  DataBlock data_block;
   size_t bucket_count; // Do not alter after construction
   ASObjBucket buckets[];
 } ASObj;
@@ -142,7 +141,7 @@ void asObjDestroy(ASObj *obj) {
         asObjDestroy(var->data.obj);
     }
   // Free String Block
-  free(obj->str_block.start);
+  free(obj->data_block.start);
   // Free Object
   free(obj);
 }
@@ -177,12 +176,11 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
   return NULL;
 }
 
-// Add String
-aschar *asObjAddString(ASObj *obj, const aschar *str) {
+// Add Data
+void *asObjAddData(ASObj *obj, const void *data, const size_t data_size) {
   // Error Checking
   ASSERT_RET(!obj, "No object passed in!", NULL);
-  ASSERT_RET(!str, "No string passed in!", NULL);
-  ASSERT_RET(str[0] == 0, "Not a viable string to add!", NULL);
+  ASSERT_RET(!data, "No data passed in!", NULL);
   // Add String to String Block
-  return strBlockAppendString(&obj->str_block, str);
+  return dataBlockAppendData(&obj->data_block, data, data_size);
 }

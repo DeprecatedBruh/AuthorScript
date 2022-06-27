@@ -1,8 +1,11 @@
 #include "ASParserVisitorImpl.hpp"
 
+// std
 #include <fstream>
 #include <iostream>
+#include <vector>
 
+// ANTLR
 #include <ASLexer.h>
 #include <ASParser.h>
 #include <ASParserBaseVisitor.h>
@@ -29,31 +32,36 @@ public:
 // Methods
 // Variables
 antlrcpp::Any ASParserVisitorImpl::visitPrimAssign(ASParser::PrimAssignContext *ctx) {
-  ASVar var = { NULL, asObjAddString(obj, ctx->ID()->toString().c_str()), AS_TYPE_NIL };
+  std::string var_id = ctx->ID()->toString();
+  ASVar var = { NULL, (const aschar *)asObjAddString(obj, var_id.c_str()), AS_TYPE_NIL };
   // Determine Type And Set Value
   switch(ctx->valueType->getType()) {
-    case(size_t)ASParser::VALUE_INT:
+    case(size_t)ASParser::VALUE_INT: {
       var.type = AS_TYPE_INTEGER;
-      var.data.value_i = atoll(ctx->VALUE_INT()->toString().c_str());
-      break;
-    case(size_t)ASParser::VALUE_FLOAT:
+      const int64_t value = atoll(ctx->VALUE_INT()->toString().c_str());
+      var.data.value_i = (int64_t *)asObjAddData(obj, &value, sizeof(value));
+    } break;
+    case(size_t)ASParser::VALUE_FLOAT: {
       var.type = AS_TYPE_FLOAT;
-      var.data.value_f = atof(ctx->VALUE_FLOAT()->toString().c_str());
-      break;
+      const double value = atof(ctx->VALUE_FLOAT()->toString().c_str());
+      var.data.value_f = (double *)asObjAddData(obj, &value, sizeof(value));
+    } break;
     case(size_t)ASParser::VALUE_STRING: {
       var.type = AS_TYPE_STRING;
       std::string value = ctx->VALUE_STRING()->toString();
-      value.at(value.length() - 1) = '\0';           // Ends string before last '"'
-      var.data.str = asObjAddString(obj, &value[1]); // Starts string after first '"'
+      value.at(value.length() - 1) = '\0';                     // Ends string before last '"'
+      var.data.str = (aschar *)asObjAddString(obj, &value[1]); // Starts string after first '"'
     } break;
-    case(size_t)ASParser::VALUE_TRUE:
+    case(size_t)ASParser::VALUE_TRUE: {
       var.type = AS_TYPE_BOOLEAN;
-      var.data.value_b = true;
-      break;
-    case(size_t)ASParser::VALUE_FALSE:
+      const asbool value = true;
+      var.data.value_b = (asbool *)asObjAddData(obj, &value, sizeof(value));
+    } break;
+    case(size_t)ASParser::VALUE_FALSE: {
       var.type = AS_TYPE_BOOLEAN;
-      var.data.value_b = false;
-      break;
+      const asbool value = false;
+      var.data.value_b = (asbool *)asObjAddData(obj, &value, sizeof(value));
+    } break;
   }
   // Add Variable
   return asObjSetVar(obj, var);
@@ -64,7 +72,7 @@ antlrcpp::Any ASParserVisitorImpl::visitObjectAssign(ASParser::ObjectAssignConte
   // Create new child object
   ASObj *const parent_obj = this->obj;
   ASObj *const child_obj = this->obj = asObjCreate(AS_OBJ_CHILD_BUCKETS);
-  ASVar var = { child_obj, asObjAddString(parent_obj, ctx->ID()->toString().c_str()), AS_TYPE_OBJECT };
+  ASVar var = { child_obj, (const aschar *)asObjAddString(parent_obj, ctx->ID()->toString().c_str()), AS_TYPE_OBJECT };
   asObjSetVar(parent_obj, var);
   // Loop through and process variables
   for(auto &var_ctx : ctx->var()) visit(var_ctx);
@@ -80,7 +88,7 @@ antlrcpp::Any ASParserVisitorImpl::visitFunction(ASParser::FunctionContext *ctx)
   // Create Function Body
   ASObj *const parent_obj = this->obj;
   ASObj *const func_body = this->obj = asObjCreate(AS_FUNC_OBJ_CHILD_BUCKETS);
-  ASVar var = { func_body, asObjAddString(parent_obj, ctx->ID()->toString().c_str()), AS_TYPE_OBJECT };
+  ASVar var = { func_body, (const aschar *)asObjAddString(parent_obj, ctx->ID()->toString().c_str()), AS_TYPE_OBJECT };
   asObjSetVar(parent_obj, var);
   // Process Function Parameters
   if(ctx->functionParams())
@@ -95,7 +103,12 @@ antlrcpp::Any ASParserVisitorImpl::visitFunction(ASParser::FunctionContext *ctx)
 #undef AS_FUNC_OBJ_CHILD_BUCKETS
 
 antlrcpp::Any ASParserVisitorImpl::visitFunctionParams(ASParser::FunctionParamsContext *ctx) {
-  // TODO: Work on funtion parameters
+  std::vector<ASVar> params;
+  // Get Variables
+  for(auto &id : ctx->ID()) {
+    // aschar *name = asObjAddString(obj, id->toString().c_str());
+    // TODO: Finish this! Need a way to reference other data.
+  }
   return visitChildren(ctx);
 }
 

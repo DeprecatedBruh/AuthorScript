@@ -27,8 +27,6 @@ public:
 
     virtual antlrcpp::Any visitObjectAssign(ASParser::ObjectAssignContext *context) = 0;
 
-    virtual antlrcpp::Any visitFunctionAssign(ASParser::FunctionAssignContext *context) = 0;
-
     virtual antlrcpp::Any visitVariable(ASParser::VariableContext *context) = 0;
 
     virtual antlrcpp::Any visitFunction(ASParser::FunctionContext *context) = 0;

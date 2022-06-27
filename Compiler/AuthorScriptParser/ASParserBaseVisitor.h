@@ -31,10 +31,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFunctionAssign(ASParser::FunctionAssignContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual antlrcpp::Any visitVariable(ASParser::VariableContext *ctx) override {
     return visitChildren(ctx);
   }
