@@ -1,27 +1,13 @@
 #include "ASData.h"
 
 // std
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
+// AS
+#include "ASAssert.h"
+
 //? Should this program not abort after failed memory allocation?
-
-#define ERROR_MSG(msg)                                                                                                                 \
-  fprintf(stderr, "%s Error: \"%s\"\n", __func__, msg);                                                                                \
-  fflush(stderr);
-
-#define ASSERT(condition, msg)                                                                                                         \
-  if(condition) {                                                                                                                      \
-    ERROR_MSG(msg);                                                                                                                    \
-    return;                                                                                                                            \
-  }
-
-#define ASSERT_RET(condition, msg, default_return)                                                                                     \
-  if(condition) {                                                                                                                      \
-    ERROR_MSG(msg);                                                                                                                    \
-    return default_return;                                                                                                             \
-  }
 
 // Data Block
 typedef struct DataBlock {
@@ -33,17 +19,15 @@ typedef struct DataBlock {
 #define DATA_SIZE_INIT 64
 #define DATA_SIZE_EXPANSION 64
 
-#define dataBlockAppendString(data_block, str, str_len) dataBlockAppendData(data_block, str, str_len + 1)
 static void *dataBlockAppendData(DataBlock *const data_block, const void *const data, const size_t data_size) {
 #ifdef DEBUG
   // Error Checking
-  ASSERT_RET(!data_block, "No string block was passed in!", NULL);
-  ASSERT_RET(!data, "No data was passed in!", NULL);
+  ASSERT_RET(!data_block, "No data block was passed in!", NULL);
 #endif
   // Determine Indexes
-  size_t end_index = data_block->size - sizeof(aschar);
-  size_t index_offs = data_block->index - data_block->start;
-  size_t new_index_offs = index_offs + data_size;
+  const size_t end_index = data_block->size - sizeof(aschar);
+  const size_t index_offs = data_block->index - data_block->start;
+  const size_t new_index_offs = index_offs + data_size;
   // Allocate more memory
   if(new_index_offs > end_index) {
     // Allocate
@@ -60,7 +44,8 @@ static void *dataBlockAppendData(DataBlock *const data_block, const void *const 
   }
   // Copy Data
   void *ret_index = data_block->index;
-  memcpy(data_block->index, data, data_size);
+  if(data) // Only copy data if ptr is not NULL - Most useful for reserving data
+    memcpy(data_block->index, data, data_size);
   data_block->index = data_block->start + new_index_offs;
   return ret_index;
 }
@@ -99,13 +84,6 @@ static ASVar *asObjBucketAppendMember(ASObjBucket *bucket, ASVar *var) {
 
 #undef SLOT_EXPANSION_AMOUNT
 
-// Author Script Object
-typedef struct ASObj {
-  DataBlock data_block;
-  size_t bucket_count; // Do not alter after construction
-  ASObjBucket buckets[];
-} ASObj;
-
 // Helper Functions
 static inline uint64_t rol64(uint64_t value, const uint8_t shift) {
   return (value << shift) | (value >> (sizeof(value) * 8 - shift));
@@ -120,11 +98,26 @@ static size_t hashCharStr(const aschar *const str, const size_t mod_by) {
   return hash % mod_by;
 }
 
+// Author Script Object
+//* ASObj is opaque since the user should never interact directly with it
+typedef struct ASObj {
+  DataBlock data_block;
+  size_t bucket_count; // Do not alter after construction
+  ASObjBucket buckets[];
+} ASObj;
+const size_t AS_OBJ_SIZE = sizeof(ASObj);
+
 // Constructor
-ASObj *asObjCreate(const size_t bucket_count) {
-  ASObj *obj = calloc(sizeof(ASObj) + (sizeof(ASObjBucket) * bucket_count), 1);
-  if(!obj)
-    abort();
+ASObj *asObjCreateAtMemory(void *memory, const size_t bucket_count) {
+  ASObj *obj;
+  if(!memory) { // Allocate memory if passed NULL
+    obj = calloc(sizeof(ASObj) + (sizeof(ASObjBucket) * bucket_count), 1);
+    if(!obj)
+      abort();
+  }
+  else
+    obj = memset(obj, 0, sizeof(ASObj));
+  // Set members
   obj->bucket_count = bucket_count;
   return obj;
 }
@@ -137,8 +130,14 @@ void asObjDestroy(ASObj *obj) {
   for(size_t i = 0; i < obj->bucket_count; i++)
     for(size_t j = 0; j < obj->buckets[i].consumed; j++) {
       ASVar *var = &obj->buckets[i].members[j];
-      if(var->type == AS_TYPE_OBJECT)
-        asObjDestroy(var->data.obj);
+      switch(var->type) {
+        case AS_TYPE_OBJECT:
+          asObjDestroy(var->data.obj);
+          break;
+        case AS_TYPE_FUNCTION:
+          asFuncDestroy(var->data.func);
+          break;
+      }
     }
   // Free DataBlock
   free(obj->data_block.start);
@@ -148,8 +147,10 @@ void asObjDestroy(ASObj *obj) {
 
 // Add Member
 ASVar *asObjSetVar(ASObj *obj, ASVar var) {
+#ifdef DEBUG
   // Error Checking
   ASSERT_RET(!obj, "Object wasn't passed in!", NULL);
+#endif
   // Hashing
   const size_t hash = hashCharStr(var.name, obj->bucket_count);
   ASObjBucket *bucket = &obj->buckets[hash];
@@ -167,6 +168,10 @@ ASVar *asObjSetVar(ASObj *obj, ASVar var) {
 
 // Find Member
 ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
+#ifdef DEBUG
+  // Error Checking
+  ASSERT_RET(!obj, "Object wasn't passed in!", NULL);
+#endif
   const size_t hash = hashCharStr(name, obj->bucket_count);
   ASObjBucket *bucket = &obj->buckets[hash];
   for(size_t i = 0; i < bucket->consumed; ++i) {
@@ -178,9 +183,10 @@ ASVar *asObjFindVar(ASObj *obj, const aschar *name) {
 
 // Add Data
 void *asObjAddData(ASObj *obj, const void *data, const size_t data_size) {
+#ifdef DEBUG
   // Error Checking
   ASSERT_RET(!obj, "No object passed in!", NULL);
-  ASSERT_RET(!data, "No data passed in!", NULL);
+#endif
   // Add String to String Block
   return dataBlockAppendData(&obj->data_block, data, data_size);
 }
