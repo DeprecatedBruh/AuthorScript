@@ -6,23 +6,13 @@
 // AS
 #include "ASAssert.h"
 
-// Function Actions
-typedef enum ASFuncAction {
-  // Function Traversal
-  CALL = 0,
-  RETURNS,
-  RETURN,
-  // Assignment
-  ASSIGN,
-} ASFuncAction;
-
 // Author Script Function
-typedef struct ASFunc { // vars getter macro needs to be adjusted if pos in struct is changed
+typedef struct ASFunc {
   ASObj *vars;
+  char *func_body;
 } ASFunc;
 
 #define AS_FUNC_VARS_BUCKET_COUNT 12
-
 // Constructor
 ASFunc *asFuncCreate() {
   ASFunc *func = malloc(sizeof(ASFunc) + AS_OBJ_SIZE);

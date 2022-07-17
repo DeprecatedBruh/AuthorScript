@@ -99,7 +99,6 @@ static size_t hashCharStr(const aschar *const str, const size_t mod_by) {
 }
 
 // Author Script Object
-//* ASObj is opaque since the user should never interact directly with it
 typedef struct ASObj {
   DataBlock data_block;
   size_t bucket_count; // Do not alter after construction
